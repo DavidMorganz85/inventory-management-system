@@ -1,107 +1,125 @@
 # UIRI Inventory Management System
 
-A hierarchical, role-based Inventory Management System built for the **Uganda Industrial
-Research Institute (UIRI)** in pure **PHP + MySQL** (no framework — runs directly on XAMPP).
+[![PHP Version](https://img.shields.io/badge/php-%E2%89%A5%208.0-777bb4.svg)](https://www.php.net/)
+[![MySQL](https://img.shields.io/badge/mysql-%2300f.svg?style=flat&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Organizational Hierarchy
+A hierarchical, secure, role-based Inventory Management System custom-built for the **Uganda Industrial Research Institute (UIRI)**. Developed in pure **PHP and MySQL** without external heavy frameworks, ensuring optimal performance and direct execution on standard stack environments like XAMPP.
 
-```
-Branch  (e.g. Nakawa HQ, Namanve)
- └─ Department   (has ONE Department Manager)
-     └─ Section  (has ONE Section Chief)
-         └─ Items (metadata, quantity, images, stock history)
-```
+---
 
-## Roles & Permissions
+## 🏗️ System Architecture & Data Scope
 
-| Action                              | Admin | Dept. Manager (own dept.) | Section Chief (own section) |
-|--------------------------------------|:-----:|:--------------------------:|:-----------------------------:|
-| Create/edit/delete Branches           | ✅    | ❌                          | ❌ |
-| Create/edit/delete Departments        | ✅    | ❌                          | ❌ |
-| Create/edit/delete Sections           | ✅    | ❌                          | ❌ |
-| Assign Dept. Managers / Section Chiefs| ✅    | ❌                          | ❌ |
-| Create / Read / Update items          | ✅ (any) | ✅ (any section in dept.) | ✅ (own section only) |
-| Delete items                          | ✅    | ❌                          | ❌ |
-| View other sections in same dept.     | ✅    | ✅                          | ❌ |
-| View other departments                | ✅    | ❌                          | ❌ |
-| Generate reports                      | ✅ (any branch/dept/section) | ✅ (own dept. only) | ❌ |
-| Manage users / reassign roles         | ✅    | ❌                          | ❌ |
+The system maps directly to UIRI's organizational structure, ensuring strict data isolation at every tier. Data isolation is enforced strictly **server-side** on every query and form submission via security hooks (`includes/functions.php` $\rightarrow$ `scope_items_clause()`, `user_can_access_section()`). 
 
-Data isolation is enforced **server-side** on every query and every form submission
-(`includes/functions.php` → `scope_items_clause()`, `user_can_access_section()`,
-`user_can_access_item()`), not just hidden in the UI — a section chief cannot see or modify
-another section's data even by tampering with a form.
+A Section Chief cannot view or modify another section's data, even by tampering with form payloads or URL parameters.
 
-## Setup on XAMPP
+#UIRI Root
+└─ Branch (e.g., Nakawa HQ, Namanve)
+└─ Department (Managed by: Department Manager)
+└─ Section (Managed by: Section Chief)
+└─ Inventory Items (Metadata, Stock History, Uploads)
 
-1. Copy the whole `uiri-ims` folder into `C:\xampp\htdocs\` (Windows) or `/Applications/XAMPP/htdocs/` (Mac).
-2. Start **Apache** and **MySQL** in the XAMPP Control Panel.
-3. Open **phpMyAdmin** (`http://localhost/phpmyadmin`), click **Import**, and import
-   `database/schema.sql`. This creates the `uiri_ims` database, all tables, seed
-   categories, the two UIRI branches (Nakawa HQ, Namanve), and a default admin account.
-4. If your MySQL root user has a password, update `config/db.php` accordingly (default
-   XAMPP setup uses an empty password, which is already configured).
-5. Visit `http://localhost/uiri-ims/` in your browser.
+## 🔐 Roles & Permissions Matrix
 
-### Default login
+| Action | Admin | Dept. Manager (Own Dept.) | Section Chief (Own Section) |
+| :--- | :---: | :---: | :---: |
+| **Manage Branches** *(Create/Edit/Delete)* | ✅ | ❌ | ❌ |
+| **Manage Departments** *(Create/Edit/Delete)* | ✅ | ❌ | ❌ |
+| **Manage Sections** *(Create/Edit/Delete)* | ✅ | ❌ | ❌ |
+| **Assign Managers / Section Chiefs** | ✅ | ❌ | ❌ |
+| **Inventory Items** *(Create/Read/Update)* | ✅ *(Global)* | ✅ *(Any Section in Dept.)* | ✅ *(Own Section Only)* |
+| **Delete Inventory Items** | ✅ | ❌ | ❌ |
+| **Cross-Section Visibility** | ✅ *(Global)* | ✅ *(Within Dept.)* | ❌ |
+| **Cross-Department Visibility** | ✅ | ❌ | ❌ |
+| **Generate Intelligence Reports** | ✅ *(Global)* | ✅ *(Own Dept.)* | ❌ |
+| **User & Access Management** | ✅ | ❌ | ❌ |
 
-```
-Email:    admin@uiri.go.ug
-Password: Admin@2026
-```
+---
 
-**Change this password immediately** after first login (Users & Roles → Reset PW), or
-create your own admin account and disable this one.
+## 🚀 Key Features
 
-## Recommended first-time workflow (as Admin)
+* **Enterprise-Grade Security:** Powered by `Bcrypt` password hashing, anti-CSRF tokens on all state-changing forms, PDO prepared statements for total SQL-injection immunity, and session regeneration.
+* **Server Lockdown:** Native `.htaccess` blocks external access to the `config/` directory and stops script execution within the `uploads/` path.
+* **Immutable Audit Trail:** Comprehensive tracking of every action (`Create`, `Update`, `Delete`, `Login`, `Logout`) capturing user IDs, timestamps, IP addresses, and mutation details via the Admin Audit Dashboard.
+* **Granular Inventory Controls:** Dedicated stock-in/stock-out movement tracking decoupled from master quantity overrides to keep historical velocity logs intact. Includes low-stock threshold triggers.
+* **Smart Asset Management:** Automated structural item code generation (e.g., `UIRI-ICT-0451`), multimedia file upload handlers, and structured supplier mappings.
+* **Reporting Suite:** Clean, print-optimized layouts for Inventory Summaries and Stock Manifests with dynamic branch/date filtering built straight into native browser printing engines.
 
-1. **Branches** — confirm/edit Nakawa HQ and Namanve, or add more.
-2. **Departments** — create departments under a branch (e.g. "ICT Department").
-3. **Users & Roles** — create user accounts for your department managers and section chiefs.
-4. **Sections** — create sections under a department and assign a Section Chief to each
-   (or assign later by editing the section).
-5. Assign a **Department Manager** to each department (Departments page).
-6. Log in as each manager/chief to confirm they only see their own scope.
-7. Start adding **Inventory Items** — Section Chiefs add items to their own section,
-   Department Managers can add/edit items in any section of their department, and the
-   Admin has full control everywhere, including deleting items and generating
-   cross-branch reports.
+---
 
-## Key features
+## 📂 Repository File Structure
 
-- **Bcrypt password hashing**, CSRF protection on every form, PDO prepared statements
-  throughout (SQL-injection safe), session regeneration, `.htaccess` lockdown of the
-  `config/` folder and execution-blocking on `uploads/`.
-- **Full audit trail** — every create/update/delete/login/logout is logged with user,
-  timestamp, IP, and details (Admin → Audit Logs).
-- **Stock-in / stock-out movement tracking** with automatic low-stock alerts, separate
-  from simple quantity edits, so there's a full history of who moved what and when.
-- **Auto-generated item codes** (e.g. `UIRI-ICT-0451`), image uploads per item, supplier
-  and category management.
-- **Print-ready reports** (Inventory Summary & Stock Movement) with branch/department/
-  section/date filters — use the browser's "Print / Save as PDF" button.
-- Clean, responsive UI themed around UIRI's navy/sky-blue/gold branding.
-
-## Folder structure
-
-```
+```text
 uiri-ims/
-├── admin/          Admin-only pages (branches, departments, sections, users, items, reports, audit log)
-├── manager/         Department Manager pages (sections view, items, reports)
-├── chief/            Section Chief pages (items only, locked to their section)
-├── auth/            Login / logout
-├── actions/         POST handlers — this is where all RBAC checks are enforced
-├── config/          DB connection + session/auth/CSRF helpers
-├── includes/         Shared header/sidebar/footer + reusable item modals
-├── assets/          CSS, logo
-├── uploads/items/    Uploaded item photos
-└── database/schema.sql
-```
+├── admin/          # Privileged Admin layouts (System management, logs, global reports)
+├── manager/        # Mid-tier Department Manager operational screens
+├── chief/          # Ground-level Section Chief narrow-scope screens
+├── auth/           # Session orchestration (Login/Logout workflows)
+├── actions/        # POST Processing Engine (Where all RBAC checks live)
+├── config/         # System environment, DB handlers, Security initializers
+├── includes/       # Reusable components (Global navigation, structural frames, modals)
+├── assets/         # Compiled UI elements (CSS typography, branding assets)
+├── uploads/items/  # Isolated persistent asset directory for item pictures
+└── database/       # Schema drops and relational structure updates
+🛠️ Local Installation & Setup (XAMPP)
+Prerequisites
+XAMPP with PHP 8.0+ and MySQL / MariaDB enabled.
 
-## Notes for further development
+Step-by-Step Guide
+Clone / Copy Project: Move the entire uiri-ims directory into your local web root:
 
-- To add a new report type, follow the pattern in `admin/reports.php` — it's filter →
-  query (respecting scope) → render, with a `.no-print` wrapper around the filter UI.
-- All write operations live in `actions/*.php`; every one of them calls `require_role()`
-  and, for items, `user_can_access_section()` / `user_can_access_item()` before touching
-  the database — keep that pattern for any new feature so the isolation guarantee holds.
+Windows: C:\xampp\htdocs\uiri-ims
+
+macOS: /Applications/XAMPP/htdocs/uiri-ims
+
+Boot Stack Engines: Open your XAMPP Control Panel and start Apache and MySQL.
+
+Database Migration: * Navigate to your local database engine management UI: http://localhost/phpmyadmin
+
+Create a database named uiri_ims.
+
+Click Import, select database/schema.sql from the project files, and execute. This initializes tables, structure, seed categories, default branches, and an admin user.
+
+Configure Environment: If your local MySQL setup requires credentials, edit config/db.php with your root password parameters:
+
+PHP
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'uiri_ims');
+define('DB_USER', 'root');
+define('DB_PASS', 'YOUR_PASSWORD_HERE');
+Launch application: Open your browser and access http://localhost/uiri-ims/.
+
+Initial Development Credentials
+⚠️ CRITICAL: Change these credentials immediately via the Users & Roles panel upon initial setup.
+
+Identifier: admin@uiri.go.ug
+
+Secret: Admin@2026
+
+🧑‍💻 Recommended Initial Testing Workflow
+To experience the system's scoping features fully, follow this configuration loop as an Admin:
+
+Verify seeded structural anchors under Branches (Nakawa HQ / Namanve).
+
+Spin up a new organizational branch node under Departments (e.g., ICT Department).
+
+Go to Users & Roles and instantiate two testing accounts: one manager, one section chief.
+
+Navigate to Sections, instantiate an operational cell (e.g., Software Dev Unit), and attach your new Section Chief.
+
+Head back to Departments and assign your Department Manager to their respective department node.
+
+Open a private browsing container, authenticate as each user, and check that access boundaries hold.
+
+🧠 Core Development Policies
+When expanding code features or adding operational hooks, maintain these development standards:
+
+Write-State Isolation: Every action file executing mutating database actions in actions/*.php must explicitly loop through authorization verifications before touching data:
+
+PHP
+require_role(['Admin', 'Dept. Manager']);
+if (!user_can_access_section($section_id)) {
+    die("Unauthorized access attempt logged.");
+}
+Report Generation Extension: When designing a new report type in admin/reports.php, use the .no-print helper class to hide configuration controls during standard media printing executions.
