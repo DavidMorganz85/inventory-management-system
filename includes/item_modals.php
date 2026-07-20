@@ -10,6 +10,43 @@
  */
 $modalMode = $modalMode ?? 'admin';
 ?>
+<!-- Damaged / Missing Inventory Modal -->
+<div class="modal-overlay" id="incidentModal">
+    <div class="modal-box">
+        <button class="modal-close" onclick="document.getElementById('incidentModal').classList.remove('active')">&times;</button>
+        <h3>Report Inventory Issue</h3>
+        <p class="form-hint">Reporting an issue removes the affected quantity from available stock and records it in transaction history.</p>
+        <form method="POST" action="/uiri-ims/actions/incident_actions.php">
+            <?= csrf_field() ?>
+            <input type="hidden" name="op" value="report">
+            <input type="hidden" name="item_id" id="incident_item_id">
+            <div class="form-group"><label>Item</label><input type="text" id="incident_item_name" disabled></div>
+            <div class="form-row">
+                <div class="form-group"><label>Condition</label><select name="incident_type" required><option value="damaged">Damaged</option><option value="missing">Missing</option></select></div>
+                <div class="form-group"><label>Quantity</label><input type="number" name="quantity" id="incident_quantity" min="1" required><div class="form-hint" id="incident_available"></div></div>
+            </div>
+            <div class="form-group"><label>Date Identified</label><input type="date" name="incident_date" max="<?= date('Y-m-d') ?>" value="<?= date('Y-m-d') ?>" required></div>
+            <div class="form-group"><label>Details</label><textarea name="details" maxlength="500" rows="4" placeholder="Describe the damage or circumstances in which the item went missing" required></textarea></div>
+            <div class="form-actions"><button type="submit" class="btn btn-primary btn-block">Record Issue</button></div>
+        </form>
+    </div>
+</div>
+
+<?php if (in_array(current_user()['role'], ['admin','dept_manager'], true)): ?>
+<div class="modal-overlay" id="resolveIncidentModal">
+    <div class="modal-box">
+        <button class="modal-close" onclick="document.getElementById('resolveIncidentModal').classList.remove('active')">&times;</button>
+        <h3>Resolve Inventory Issue #<span id="resolve_incident_number"></span></h3>
+        <form method="POST" action="/uiri-ims/actions/incident_actions.php">
+            <?= csrf_field() ?><input type="hidden" name="op" value="resolve"><input type="hidden" name="incident_id" id="resolve_incident_id">
+            <div class="form-group"><label>Resolution</label><select name="resolution" required><option value="recovered">Recovered — restore quantity to stock</option><option value="written_off">Written Off — keep quantity deducted</option></select></div>
+            <div class="form-group"><label>Resolution Note</label><textarea name="resolution_note" maxlength="500" rows="4" placeholder="Document the recovery or write-off decision" required></textarea></div>
+            <button type="submit" class="btn btn-primary btn-block">Resolve Issue</button>
+        </form>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- Create Item Modal -->
 <div class="modal-overlay" id="createItemModal">
     <div class="modal-box" style="max-width:560px;">

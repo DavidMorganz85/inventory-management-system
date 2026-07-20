@@ -72,3 +72,17 @@ function openStockModal(id, name) {
     document.getElementById('stockModal').classList.add('active');
 }
 </script>
+function openIncidentModal(id, name, quantity, unit) {
+    document.getElementById('incident_item_id').value = id;
+    document.getElementById('incident_item_name').value = name;
+    document.getElementById('incident_quantity').max = quantity;
+    document.getElementById('incident_quantity').value = '';
+    document.getElementById('incident_available').textContent = quantity + ' ' + unit + ' currently available';
+    document.getElementById('incidentModal').classList.add('active');
+}
+
+function openResolveIncident(id) {
+    document.getElementById('resolve_incident_id').value = id;
+    document.getElementById('resolve_incident_number').textContent = id;
+    document.getElementById('resolveIncidentModal').classList.add('active');
+}

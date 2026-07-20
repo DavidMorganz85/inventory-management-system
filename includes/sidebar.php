@@ -38,6 +38,8 @@ $initials = substr($initials, 0, 2);
 
             <div class="nav-section-label">Operations</div>
             <a class="nav-link <?= nav_active('items.php', $current) ?>" href="<?= $base ?>/items.php"><span class="nav-icon">&#128230;</span> Inventory Items</a>
+            <a class="nav-link <?= nav_active('stock-in.php', $current) ?>" href="/uiri-ims/stock-in.php"><span class="nav-icon">&#43;</span> Stock In</a>
+            <a class="nav-link <?= nav_active('stock-out.php', $current) ?>" href="/uiri-ims/stock-out.php"><span class="nav-icon">&#8722;</span> Stock Out</a>
             <a class="nav-link <?= nav_active('transactions.php', $current) ?>" href="/uiri-ims/transactions.php"><span class="nav-icon">&#128179;</span> Transactions</a>
             <a class="nav-link <?= nav_active('users.php', $current) ?>" href="<?= $base ?>/users.php"><span class="nav-icon">&#128100;</span> Users &amp; Roles</a>
             <a class="nav-link <?= nav_active('suppliers.php', $current) ?>" href="<?= $base ?>/suppliers.php"><span class="nav-icon">&#128666;</span> Suppliers</a>
@@ -51,6 +53,8 @@ $initials = substr($initials, 0, 2);
             <div class="nav-section-label">Department</div>
             <a class="nav-link <?= nav_active('sections.php', $current) ?>" href="<?= $base ?>/sections.php"><span class="nav-icon">&#128194;</span> Sections</a>
             <a class="nav-link <?= nav_active('items.php', $current) ?>" href="<?= $base ?>/items.php"><span class="nav-icon">&#128230;</span> Inventory Items</a>
+            <a class="nav-link <?= nav_active('stock-in.php', $current) ?>" href="/uiri-ims/stock-in.php"><span class="nav-icon">&#43;</span> Stock In</a>
+            <a class="nav-link <?= nav_active('stock-out.php', $current) ?>" href="/uiri-ims/stock-out.php"><span class="nav-icon">&#8722;</span> Stock Out</a>
             <a class="nav-link <?= nav_active('transactions.php', $current) ?>" href="/uiri-ims/transactions.php"><span class="nav-icon">&#128179;</span> Transactions</a>
             <a class="nav-link <?= nav_active('reports.php', $current) ?>" href="<?= $base ?>/reports.php"><span class="nav-icon">&#128202;</span> Reports</a>
 
@@ -60,6 +64,8 @@ $initials = substr($initials, 0, 2);
 
             <div class="nav-section-label">My Section</div>
             <a class="nav-link <?= nav_active('items.php', $current) ?>" href="<?= $base ?>/items.php"><span class="nav-icon">&#128230;</span> Inventory Items</a>
+            <a class="nav-link <?= nav_active('stock-in.php', $current) ?>" href="/uiri-ims/stock-in.php"><span class="nav-icon">&#43;</span> Stock In</a>
+            <a class="nav-link <?= nav_active('stock-out.php', $current) ?>" href="/uiri-ims/stock-out.php"><span class="nav-icon">&#8722;</span> Stock Out</a>
             <a class="nav-link <?= nav_active('transactions.php', $current) ?>" href="/uiri-ims/transactions.php"><span class="nav-icon">&#128179;</span> Transactions</a>
             <?php if (!empty($u['can_view_reports_own_section'])): ?>
                 <a class="nav-link <?= nav_active('reports.php', $current) ?>" href="<?= $base ?>/reports.php"><span class="nav-icon">&#128202;</span> Section Reports</a>

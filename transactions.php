@@ -66,7 +66,7 @@ $stmt = $pdo->prepare(
      JOIN departments d ON s.department_id = d.id
      LEFT JOIN users u ON st.performed_by = u.id
      $whereSql
-     ORDER BY st.created_at DESC LIMIT 500"
+     ORDER BY st.created_at DESC"
 );
 $stmt->execute($params);
 $transactions = $stmt->fetchAll();

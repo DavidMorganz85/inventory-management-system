@@ -8,16 +8,21 @@ $user = current_user();
 $sectionFilter = $_GET['section_id'] ?? '';
 $search = trim($_GET['q'] ?? '');
 $stockFilter = $_GET['stock'] ?? '';
+$conditionFilter = $_GET['condition'] ?? '';
 
 $where = ['s.department_id = ?'];
 $params = [$user['department_id']];
 if ($sectionFilter !== '') { $where[] = 's.id = ?'; $params[] = $sectionFilter; }
 if ($search !== '') { $where[] = '(i.name LIKE ? OR i.item_code LIKE ?)'; $params[] = "%$search%"; $params[] = "%$search%"; }
 if ($stockFilter === 'low') { $where[] = 'i.quantity <= i.low_stock_threshold'; }
+if (in_array($conditionFilter, ['damaged','missing'], true)) { $where[] = "EXISTS (SELECT 1 FROM inventory_incidents ii WHERE ii.item_id=i.id AND ii.status='open' AND ii.incident_type=?)"; $params[] = $conditionFilter; }
 $whereSql = 'WHERE ' . implode(' AND ', $where);
 
 $items = $pdo->prepare(
-    "SELECT i.*, s.name AS section_name, c.name AS category_name, sup.name AS supplier_name
+    "SELECT i.*, s.name AS section_name, c.name AS category_name, sup.name AS supplier_name,
+      (SELECT COALESCE(SUM(ii.quantity),0) FROM inventory_incidents ii WHERE ii.item_id=i.id AND ii.status='open' AND ii.incident_type='damaged') AS damaged_qty,
+      (SELECT COALESCE(SUM(ii.quantity),0) FROM inventory_incidents ii WHERE ii.item_id=i.id AND ii.status='open' AND ii.incident_type='missing') AS missing_qty,
+      (SELECT ii.id FROM inventory_incidents ii WHERE ii.item_id=i.id AND ii.status='open' ORDER BY ii.id LIMIT 1) AS open_incident_id
      FROM items i
      JOIN sections s ON i.section_id = s.id
      LEFT JOIN categories c ON i.category_id = c.id
@@ -54,6 +59,7 @@ include __DIR__ . '/../includes/header.php';
             <option value="">All Sections</option>
             <?php foreach ($sectionsForFilter as $s): ?><option value="<?= (int)$s['id'] ?>" <?= $sectionFilter==$s['id']?'selected':'' ?>><?= e($s['name']) ?></option><?php endforeach; ?>
         </select>
+        <select name="condition" onchange="this.form.submit()" style="max-width:180px;"><option value="">All Conditions</option><option value="damaged" <?= $conditionFilter==='damaged'?'selected':'' ?>>Damaged Items</option><option value="missing" <?= $conditionFilter==='missing'?'selected':'' ?>>Missing Items</option></select>
         <select name="stock" onchange="this.form.submit()" style="max-width:150px;">
             <option value="">All Stock Levels</option>
             <option value="low" <?= $stockFilter==='low'?'selected':'' ?>>Low Stock Only</option>
@@ -73,11 +79,13 @@ include __DIR__ . '/../includes/header.php';
                     <td><?= e($it['section_name']) ?></td>
                     <td><?= e($it['category_name'] ?? '—') ?></td>
                     <td><?= (int)$it['quantity'] ?> <?= e($it['unit']) ?></td>
-                    <td><?php if (low_stock($it)): ?><span class="badge badge-danger">Low Stock</span><?php else: ?><span class="badge badge-success">OK</span><?php endif; ?></td>
+                    <td><?php if ((int)$it['damaged_qty']): ?><span class="badge badge-warning">Damaged: <?= (int)$it['damaged_qty'] ?></span><?php endif; ?> <?php if ((int)$it['missing_qty']): ?><span class="badge badge-danger">Missing: <?= (int)$it['missing_qty'] ?></span><?php endif; ?> <?php if (!(int)$it['damaged_qty'] && !(int)$it['missing_qty']): ?><?php if (low_stock($it)): ?><span class="badge badge-danger">Low Stock</span><?php else: ?><span class="badge badge-success">OK</span><?php endif; ?><?php endif; ?></td>
                     <td class="table-actions">
                         <button class="btn btn-outline btn-sm" onclick='openViewItem(<?= json_encode($it) ?>)'>View</button>
                         <button class="btn btn-outline btn-sm" onclick='openEditItem(<?= json_encode($it) ?>)'>Edit</button>
                         <button class="btn btn-sky btn-sm" onclick='openStockModal(<?= (int)$it["id"] ?>, "<?= e($it['name']) ?>")'>Stock</button>
+                        <button class="btn btn-outline btn-sm" onclick='openIncidentModal(<?= (int)$it["id"] ?>, <?= json_encode($it['name']) ?>, <?= (int)$it["quantity"] ?>, <?= json_encode($it['unit']) ?>)'>Report Issue</button>
+                        <?php if ($it['open_incident_id']): ?><button class="btn btn-sky btn-sm" onclick="openResolveIncident(<?= (int)$it['open_incident_id'] ?>)">Resolve Issue</button><?php endif; ?>
                     </td>
                 </tr>
             <?php endforeach; ?>

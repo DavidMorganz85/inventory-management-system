@@ -69,6 +69,12 @@ include __DIR__ . '/../includes/header.php';
                             ?>
                         <?php endif; ?>
                     </td>
+                    <td style="font-size:12px;">
+                        <?php if ($u['role'] === 'admin'): ?>All branches
+                        <?php elseif ($u['role'] === 'dept_manager'): ?><?= e(($u['branch_name'] ?? 'Unassigned') . ' / ' . ($u['dept_name'] ?? 'Unassigned')) ?>
+                        <?php else: ?><?= e(($u['branch_name'] ?? 'Unassigned') . ' / ' . ($u['dept_name'] ?? 'Unassigned') . ' / ' . ($u['section_name'] ?? 'Unassigned')) ?>
+                        <?php endif; ?>
+                    </td>
                     <td>
                         <?php if ($u['status'] === 'active'): ?>
                             <span class="badge badge-success">Active</span>
@@ -77,6 +83,7 @@ include __DIR__ . '/../includes/header.php';
                         <?php endif; ?>
                     </td>
                     <td class="table-actions">
+                        <button class="btn btn-outline btn-sm" onclick='openEditUser(<?= json_encode($u, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Edit</button>
                         <button class="btn btn-outline btn-sm" onclick="openResetPassword(<?= (int)$u['id'] ?>, '<?= e($u['full_name']) ?>')">Reset PW</button>
                         <?php if ($u['id'] != $user['id']): ?>
                             <form method="POST" action="/uiri-ims/actions/user_actions.php" style="display:inline;">
@@ -100,6 +107,37 @@ include __DIR__ . '/../includes/header.php';
             <?php endforeach; ?>
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- Edit User and Role Modal -->
+<div class="modal-overlay" id="editUserModal">
+    <div class="modal-box">
+        <button class="modal-close" onclick="document.getElementById('editUserModal').classList.remove('active')">&times;</button>
+        <h3>Edit User &amp; Role</h3>
+        <form method="POST" action="/uiri-ims/actions/user_actions.php">
+            <?= csrf_field() ?>
+            <input type="hidden" name="op" value="update"><input type="hidden" name="id" id="edit_user_id">
+            <div class="form-group"><label>Full Name</label><input type="text" name="full_name" id="edit_user_name" required></div>
+            <div class="form-group"><label>Email</label><input type="email" name="email" id="edit_user_email" required></div>
+            <div class="form-group"><label>Role</label><select name="role" id="edit_user_role" onchange="toggleEditScope()" required>
+                <option value="admin">Administrator</option><option value="dept_manager">Department Manager</option><option value="section_chief">Section Chief</option>
+            </select></div>
+            <div id="editScopeFields">
+                <div class="form-group"><label>Branch</label><select name="branch_id" id="edit_user_branch" onchange="fillEditDepartments()"><option value="">-- Select Branch --</option><?php foreach ($branches as $b): ?><option value="<?= (int)$b['id'] ?>"><?= e($b['name']) ?></option><?php endforeach; ?></select></div>
+                <div class="form-group"><label>Department</label><select name="department_id" id="edit_user_dept" onchange="fillEditSections()"></select></div>
+                <div class="form-group" id="editSectionWrap"><label>Section</label><select name="section_id" id="edit_user_section"></select></div>
+                <div class="form-group" id="editChiefPermissions" style="border:1px solid var(--border); padding:12px; border-radius:10px;">
+                    <label>Section Chief Permissions</label>
+                    <label><input type="checkbox" name="can_physical_audit" id="edit_can_physical_audit" value="1"> Physical Stock Auditor</label><br>
+                    <label><input type="checkbox" name="can_delegate_view" id="edit_can_delegate_view" value="1"> Read-only Delegate</label><br>
+                    <label><input type="checkbox" name="can_procurement_liaison" id="edit_can_procurement_liaison" value="1"> Procurement Liaison</label><br>
+                    <label><input type="checkbox" name="can_view_reports_own_section" id="edit_can_view_reports_own_section" value="1"> Report Viewer</label><br>
+                    <label><input type="checkbox" name="can_request_writeoff" id="edit_can_request_writeoff" value="1"> Write-off Requester</label>
+                </div>
+            </div>
+            <div class="form-actions"><button class="btn btn-primary btn-block" type="submit">Save User &amp; Role</button></div>
+        </form>
     </div>
 </div>
 
@@ -205,6 +243,40 @@ function openResetPassword(id, name) {
     document.getElementById('reset_pw_id').value = id;
     document.getElementById('reset_pw_name').textContent = name;
     document.getElementById('resetPwModal').classList.add('active');
+}
+
+function fillEditDepartments(selected = '') {
+    const branchId = document.getElementById('edit_user_branch').value;
+    const select = document.getElementById('edit_user_dept');
+    select.innerHTML = '<option value="">-- Select Department --</option>';
+    allDepartments.filter(d => String(d.branch_id) === String(branchId)).forEach(d => select.add(new Option(d.name, d.id, false, String(d.id) === String(selected))));
+    fillEditSections();
+}
+function fillEditSections(selected = '') {
+    const deptId = document.getElementById('edit_user_dept').value;
+    const select = document.getElementById('edit_user_section');
+    select.innerHTML = '<option value="">-- Select Section --</option>';
+    allSections.filter(s => String(s.department_id) === String(deptId)).forEach(s => select.add(new Option(s.name, s.id, false, String(s.id) === String(selected))));
+}
+function toggleEditScope() {
+    const role = document.getElementById('edit_user_role').value;
+    document.getElementById('editScopeFields').style.display = role === 'admin' ? 'none' : 'block';
+    document.getElementById('editSectionWrap').style.display = role === 'section_chief' ? 'block' : 'none';
+    document.getElementById('editChiefPermissions').style.display = role === 'section_chief' ? 'block' : 'none';
+}
+function openEditUser(user) {
+    document.getElementById('edit_user_id').value = user.id;
+    document.getElementById('edit_user_name').value = user.full_name;
+    document.getElementById('edit_user_email').value = user.email;
+    document.getElementById('edit_user_role').value = user.role;
+    document.getElementById('edit_user_branch').value = user.branch_id || '';
+    fillEditDepartments(user.department_id || '');
+    fillEditSections(user.section_id || '');
+    ['can_physical_audit','can_delegate_view','can_procurement_liaison','can_view_reports_own_section','can_request_writeoff'].forEach(key => {
+        document.getElementById('edit_' + key).checked = Number(user[key]) === 1;
+    });
+    toggleEditScope();
+    document.getElementById('editUserModal').classList.add('active');
 }
 </script>
 
