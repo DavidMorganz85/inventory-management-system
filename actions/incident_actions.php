@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config/auth.php';
 require_once __DIR__ . '/../includes/functions.php';
 
 require_role(['admin', 'dept_manager', 'section_chief']);
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: /uiri-ims/incidents.php'); exit; }
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') { redirect_to_dashboard(); }
 verify_csrf();
 
 $user = current_user();
